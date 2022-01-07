@@ -6,32 +6,26 @@
   text-align: center;
 }
 
-.logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
 p {
   margin: 20px 0px;
-}
-
-.header {
-  font-size: 3rem;
-}
-
-.content {
-  margin: 20px 0 10px;
-  font-size: 0.9rem;
 }
 
 button {
   outline: none;
   border: none;
-  border-radius: 8px;
+  border-radius: 0;
   padding: 10px 35px;
 
   background: #845ec2;
   color: white;
+  /* font-size: calc(10px + 2vmin); */
+}
+button:disabled {
+  filter: brightness(30%);
+}
+button:hover {
+  filter: brightness(120%);
+  cursor: pointer;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -64,10 +58,6 @@ button {
   to {
     transform: rotate(360deg);
   }
-}
-
-button {
-  font-size: calc(10px + 2vmin);
 }
 
 body {
