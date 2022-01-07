@@ -22,6 +22,7 @@
     "next": "^11.0.1",
     "preact": "^10.5.14",
     "react-use-websocket": "^2.9.1",
+    "sass": "^1.46.0",
     "typescript": "^4.3.5"
   },
   "devDependencies": {
@@ -39,8 +40,7 @@
     "pre-commit": "^1.2.2",
     "prettier": "^2.3.2",
     "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "ws": "^8.4.0"
+    "react-dom": "^17.0.2"
   },
   "pre-commit": "test",
   "license": "MIT"

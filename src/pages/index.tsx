@@ -1,82 +1,107 @@
 import { useCallback, useState } from "react";
 import useWebSocket, {
+  ReadyState,
   ReadyState as WebSocketReadyState,
 } from "react-use-websocket";
-
-import type { Message } from "../util/types/Message";
+import MessageComponent from "src/components/Message";
+import { MessageType, TextMessage } from "src/lib/types/ServerMessage";
+import { isServerMessage, isTextMessage } from "src/lib/types/ServerMessage";
 
 export default function Index(): JSX.Element {
+  const [enableSSL, setEnableSSL] = useState(true);
+  const protocol = enableSSL ? "wss" : "ws";
+
   const [count, setCount] = useState(0);
-  const [messageHistory, setMessageHistory] = useState<Message[]>([]);
-  const [socketUrl, setSocketUrl] = useState(
-    "wss://toby222-web-drs-4gjg49gj355qq-8989.githubpreview.dev/"
-  );
+  const [messageHistory, setMessageHistory] = useState<TextMessage[]>([]);
+  const [socketUrl, setSocketUrl] = useState("localhost:8989/");
 
   function onMessage(event: MessageEvent<string>): void {
-    const message: Message = JSON.parse(event.data);
+    const message = JSON.parse(event.data);
 
-    setMessageHistory([message, ...messageHistory]);
+    if (!isServerMessage(message)) {
+      console.log("DEBUG: ", message);
+      throw new Error(`Server sent unexpected message \`${event.data}}\``);
+    }
+
+    if (isTextMessage(message)) {
+      setMessageHistory([message, ...messageHistory]);
+    }
   }
 
-  const websocket = useWebSocket(socketUrl, {
+  let keepAliveInterval: NodeJS.Timeout;
+  const websocket = useWebSocket(protocol + ":" + socketUrl, {
     onMessage,
+    onOpen() {
+      keepAliveInterval = setInterval(() => {
+        websocket.sendJsonMessage({
+          type: MessageType.ACK,
+          date: Date.now(),
+        });
+      }, 1000);
+    },
+    onClose() {
+      clearInterval(keepAliveInterval);
+    },
   });
 
   const handleClickSendMessage = useCallback(() => {
     setCount(count + 1);
-    websocket.sendMessage(`${count + 1}`);
+    const message: TextMessage = {
+      author: "AUTHOR NOT IMPLEMENTED YET",
+      type: MessageType.TEXT,
+      date: Date.now(),
+      content: `Hello, world! ${count}`,
+    };
+    websocket.sendJsonMessage(message);
   }, [count, websocket]);
 
-  const connectionStatus = {
-    [WebSocketReadyState.CONNECTING]: "Connecting",
-    [WebSocketReadyState.OPEN]: "Open",
-    [WebSocketReadyState.CLOSING]: "Closing",
-    [WebSocketReadyState.CLOSED]: "Closed",
-    [WebSocketReadyState.UNINSTANTIATED]: "Uninstantiated",
-  }[websocket.readyState];
+  const trySetSocketUrl = useCallback(
+    (url: string) => {
+      try {
+        console.log(new URL(protocol + ":" + url), url);
+        setSocketUrl(url);
+      } catch (e) {
+        console.debug("Invalid URL");
+        // Invalid URL, don't do anything
+      } finally {
+        if (websocket.readyState === WebSocketReadyState.OPEN) {
+          websocket.getWebSocket()?.close();
+        }
+      }
+    },
+    [websocket, protocol]
+  );
 
-  function trySetSocketUrl(url: string) {
-    try {
-      console.log(new URL("wss:" + url), url);
-      setSocketUrl("wss:" + url);
-    } catch (e) {
-      // Invalid URL, don't do anything
-    } finally {
-      websocket.getWebSocket()?.close();
-    }
-  }
+  const toggleSSL = useCallback(() => {
+    setEnableSSL(!enableSSL);
+    trySetSocketUrl(socketUrl.replace(/^wss?/, protocol));
+  }, [enableSSL, socketUrl, trySetSocketUrl, protocol]);
 
   return (
     <>
+      <span>
+        Ready state: {ReadyState[websocket.readyState]} ({websocket.readyState})
+      </span>
       <main>
-        {/* DEBUG
-        <div>
-          <h4>Last messages:</h4>
-          {websocket.lastMessage?.data.toString() ?? "No message received"}
-          <hr />
-          <h4>Ready state:</h4>
-          {connectionStatus} ({websocket.readyState})
-        </div>
-        */}
-        <ol>
+        <div id="messages-container">
           {messageHistory.map((message, idx) => {
-            return (
-              <span key={messageHistory.length - idx}>
-                <span>{new Date(message.date).toISOString()}</span>
-                {" - "}
-                <span>{message.content}</span>
-                <br />
-              </span>
-            );
+            return <MessageComponent message={message} key={idx} />;
           })}
-        </ol>
-        <div>
+        </div>
+        <div id="message-writing-area">
           <label htmlFor="ws-url">WebSocket URL:</label>
           <input
             id="ws-url"
-            type={"text"}
-            value={socketUrl.replace(/wss:(?:\/\/)?/, "")}
+            type="text"
+            value={socketUrl}
             onChange={(e) => trySetSocketUrl(e.target.value)}
+          />
+          <label htmlFor="wss">Enable SSL:</label>
+          <input
+            id="wss"
+            type="checkbox"
+            checked={enableSSL}
+            onChange={toggleSSL}
           />
           <button
             disabled={websocket.readyState !== WebSocketReadyState.OPEN}
