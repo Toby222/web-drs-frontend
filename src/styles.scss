@@ -1,0 +1,57 @@
+:root {
+  --primay: black;
+  --bg-primay: white;
+
+  --link: #2a0b0b;
+  text-align: center;
+}
+
+p {
+  margin: 20px 0px;
+}
+
+button {
+  outline: none;
+  border: none;
+  border-radius: 0;
+  padding: 10px 35px;
+
+  background: #845ec2;
+  color: white;
+
+  &:hover:not(:disabled) {
+    filter: brightness(120%);
+    cursor: pointer;
+  }
+  &:disabled {
+    filter: brightness(30%);
+    cursor: default;
+  }
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  justify-content: space-between;
+
+  #messages-container {
+    display: flex;
+    flex-direction: column-reverse;
+    overflow-y: scroll;
+    > :nth-child(even) {
+      background-color: lightgray;
+    }
+  }
+  #message-writing-area {
+  }
+}

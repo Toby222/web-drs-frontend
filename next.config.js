@@ -1,6 +1,7 @@
 module.exports = {
   eslint: {
     ignoreDuringBuilds: true,
+    reactStrictMode: true,
   },
   webpack(config, { dev }) {
     if (!dev) {
