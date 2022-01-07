@@ -1,8 +1,8 @@
 module.exports = {
   eslint: {
     ignoreDuringBuilds: true,
-    reactStrictMode: true,
   },
+  reactStrictMode: true,
   webpack(config, { dev }) {
     if (!dev) {
       Object.assign(config.resolve.alias, {
