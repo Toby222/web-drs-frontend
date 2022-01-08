@@ -80,11 +80,13 @@ export default function Index(): JSX.Element {
   return (
     <>
       <main>
-        <div id="messages-container">
-          {messageHistory.map((message, idx) => {
-            return <MessageComponent message={message} key={idx} />;
-          })}
-        </div>
+        <ol id="messages-container">
+          {messageHistory.map((message, idx) => (
+            <li key={idx}>
+              <MessageComponent message={message} />
+            </li>
+          ))}
+        </ol>
         <div id="message-writing-area">
           <span>Ready state: </span>
           <span style={{ fontWeight: "bold" }}>

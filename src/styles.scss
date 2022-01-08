@@ -48,8 +48,32 @@ main {
     display: flex;
     flex-direction: column;
     overflow-y: scroll;
+    overflow-anchor: none;
+    list-style: none;
+    padding-inline-start: 0;
+
     > :nth-child(even) {
       background-color: lightgray;
+    }
+
+    > li {
+      width: 100%;
+    }
+
+    .message {
+      display: block;
+      text-align: left;
+      width: 100%;
+
+      > h2 {
+        width: 100%;
+        display: inline-flex;
+        margin: 0;
+        font-size: medium;
+        justify-content: space-between;
+      }
+      .message-date {
+      }
     }
   }
   #message-writing-area {
