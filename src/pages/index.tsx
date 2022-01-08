@@ -6,6 +6,7 @@ import useWebSocket, {
 import MessageComponent from "src/components/Message";
 import type { TextMessage } from "src/lib/ServerMessage";
 import {
+  isIdResponseMessage,
   isServerMessage,
   isTextMessage,
   MessageType,
@@ -15,6 +16,7 @@ export default function Index(): JSX.Element {
   const [count, setCount] = useState(0);
   const [messageHistory, setMessageHistory] = useState<TextMessage[]>([]);
   const [socketUrl, setSocketUrl] = useState("wss.tobot.tk:8085/");
+  const [authorId, setAuthorId] = useState("<???>");
 
   function onMessage(event: MessageEvent<string>): void {
     const message = JSON.parse(event.data);
@@ -24,7 +26,9 @@ export default function Index(): JSX.Element {
       throw new Error(`Server sent unexpected message \`${event.data}}\``);
     }
 
-    if (isTextMessage(message)) {
+    if (isIdResponseMessage(message)) {
+      setAuthorId(message.authorId);
+    } else if (isTextMessage(message)) {
       setMessageHistory([message, ...messageHistory]);
     }
   }
@@ -48,13 +52,13 @@ export default function Index(): JSX.Element {
   const handleClickSendMessage = useCallback(() => {
     setCount(count + 1);
     const message: TextMessage = {
-      author: -1,
+      author: authorId,
       type: MessageType.TEXT,
       date: Date.now(),
       content: `Hello, world! ${count}`,
     };
     websocket.sendJsonMessage(message);
-  }, [count, websocket]);
+  }, [count, websocket, authorId]);
 
   const trySetSocketUrl = useCallback(
     (url: string) => {
