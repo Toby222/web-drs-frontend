@@ -1,5 +1,5 @@
 import { FunctionComponent } from "react";
-import { TextMessage } from "src/lib/types/ServerMessage";
+import { TextMessage } from "src/lib/ServerMessage";
 
 type Props = {
   message: TextMessage;
