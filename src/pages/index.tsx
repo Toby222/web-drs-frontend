@@ -29,7 +29,7 @@ export default function Index(): JSX.Element {
     if (isIdResponseMessage(message)) {
       setAuthorId(message.authorId);
     } else if (isTextMessage(message)) {
-      setMessageHistory([message, ...messageHistory]);
+      setMessageHistory([...messageHistory, message]);
     }
   }
 

@@ -46,7 +46,7 @@ main {
 
   #messages-container {
     display: flex;
-    flex-direction: column-reverse;
+    flex-direction: column;
     overflow-y: scroll;
     > :nth-child(even) {
       background-color: lightgray;
