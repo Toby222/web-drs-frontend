@@ -4,16 +4,17 @@ import useWebSocket, {
   ReadyState as WebSocketReadyState,
 } from "react-use-websocket";
 import MessageComponent from "src/components/Message";
-import { MessageType, TextMessage } from "src/lib/types/ServerMessage";
-import { isServerMessage, isTextMessage } from "src/lib/types/ServerMessage";
+import type { TextMessage } from "src/lib/ServerMessage";
+import {
+  isServerMessage,
+  isTextMessage,
+  MessageType,
+} from "src/lib/ServerMessage";
 
 export default function Index(): JSX.Element {
-  const [enableSSL, setEnableSSL] = useState(true);
-  const protocol = enableSSL ? "wss" : "ws";
-
   const [count, setCount] = useState(0);
   const [messageHistory, setMessageHistory] = useState<TextMessage[]>([]);
-  const [socketUrl, setSocketUrl] = useState("localhost:8989/");
+  const [socketUrl, setSocketUrl] = useState("wss.tobot.tk:8085/");
 
   function onMessage(event: MessageEvent<string>): void {
     const message = JSON.parse(event.data);
@@ -29,7 +30,7 @@ export default function Index(): JSX.Element {
   }
 
   let keepAliveInterval: NodeJS.Timeout;
-  const websocket = useWebSocket(protocol + ":" + socketUrl, {
+  const websocket = useWebSocket("wss://" + socketUrl, {
     onMessage,
     onOpen() {
       keepAliveInterval = setInterval(() => {
@@ -47,7 +48,7 @@ export default function Index(): JSX.Element {
   const handleClickSendMessage = useCallback(() => {
     setCount(count + 1);
     const message: TextMessage = {
-      author: "AUTHOR NOT IMPLEMENTED YET",
+      author: -1,
       type: MessageType.TEXT,
       date: Date.now(),
       content: `Hello, world! ${count}`,
@@ -58,7 +59,7 @@ export default function Index(): JSX.Element {
   const trySetSocketUrl = useCallback(
     (url: string) => {
       try {
-        console.log(new URL(protocol + ":" + url), url);
+        console.log(new URL("wss://" + url), url);
         setSocketUrl(url);
       } catch (e) {
         console.debug("Invalid URL");
@@ -69,19 +70,11 @@ export default function Index(): JSX.Element {
         }
       }
     },
-    [websocket, protocol]
+    [websocket]
   );
-
-  const toggleSSL = useCallback(() => {
-    setEnableSSL(!enableSSL);
-    trySetSocketUrl(socketUrl.replace(/^wss?/, protocol));
-  }, [enableSSL, socketUrl, trySetSocketUrl, protocol]);
 
   return (
     <>
-      <span>
-        Ready state: {ReadyState[websocket.readyState]} ({websocket.readyState})
-      </span>
       <main>
         <div id="messages-container">
           {messageHistory.map((message, idx) => {
@@ -89,19 +82,16 @@ export default function Index(): JSX.Element {
           })}
         </div>
         <div id="message-writing-area">
+          <span>Ready state: </span>
+          <span style={{ fontWeight: "bold" }}>
+            {ReadyState[websocket.readyState]} ({websocket.readyState})
+          </span>
           <label htmlFor="ws-url">WebSocket URL:</label>
           <input
             id="ws-url"
             type="text"
             value={socketUrl}
             onChange={(e) => trySetSocketUrl(e.target.value)}
-          />
-          <label htmlFor="wss">Enable SSL:</label>
-          <input
-            id="wss"
-            type="checkbox"
-            checked={enableSSL}
-            onChange={toggleSSL}
           />
           <button
             disabled={websocket.readyState !== WebSocketReadyState.OPEN}
