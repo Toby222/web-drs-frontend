@@ -6,19 +6,15 @@
   text-align: center;
 }
 
+* {
+  font-family: unset;
+}
+
 p {
   margin: 20px 0px;
 }
 
 button {
-  outline: none;
-  border: none;
-  border-radius: 0;
-  padding: 10px 35px;
-
-  background: #845ec2;
-  color: white;
-
   &:hover:not(:disabled) {
     filter: brightness(120%);
     cursor: pointer;
@@ -31,39 +27,43 @@ button {
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 main {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+
+  height: calc(100vh - 20px);
+  width: calc(100vw - 20px);
   justify-content: space-between;
+  padding: 10px;
+
+  .nickname {
+    font-style: italic;
+  }
 
   #messages-container {
     display: flex;
     flex-direction: column;
+    flex-grow: 1;
+
     overflow-y: scroll;
     overflow-anchor: none;
     list-style: none;
     padding-inline-start: 0;
-
-    > :nth-child(even) {
-      background-color: lightgray;
-    }
-
-    > li {
-      width: 100%;
-    }
+    max-width: 100%;
+    overflow-wrap: break-word;
 
     .message {
       display: block;
       text-align: left;
-      width: 100%;
+      width: calc(100% - 2 * 5px);
+      padding: 5px;
+      white-space: pre-line;
+
+      &:nth-child(even) {
+        background-color: #f2f2f2;
+      }
 
       > h2 {
         width: 100%;
@@ -72,10 +72,15 @@ main {
         font-size: medium;
         justify-content: space-between;
       }
-      .message-date {
-      }
     }
   }
   #message-writing-area {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    #message-input {
+      width: 80%;
+    }
   }
 }

@@ -5,7 +5,9 @@ import AuthorComponent from "./Author";
 
 type MessageComponentProps = {
   message: TextMessage;
+  authorNickname: string;
 };
+
 enum MONTH_NAMES {
   "January",
   "February",
@@ -59,8 +61,8 @@ function timeAgo(dateParam: Date | number) {
   const isYesterday = yesterday.toDateString() === date.toDateString();
   const isThisYear = today.getFullYear() === date.getFullYear();
 
-  if (seconds < 5) {
-    return "now";
+  if (seconds < 2) {
+    return "just now";
   } else if (seconds < 60) {
     return `${seconds} seconds ago`;
   } else if (seconds < 90) {
@@ -80,6 +82,7 @@ function timeAgo(dateParam: Date | number) {
 
 const MessageComponent: FunctionComponent<MessageComponentProps> = ({
   message,
+  authorNickname,
 }) => {
   const date = new Date(message.date);
   const [timeAgoString, setTimeAgoString] = useState(timeAgo(message.date));
@@ -92,14 +95,17 @@ const MessageComponent: FunctionComponent<MessageComponentProps> = ({
       }
     };
 
-    const interval = setInterval(checkTimeAgo, 5000);
+    const interval = setInterval(checkTimeAgo, 1000);
     return () => clearInterval(interval);
   }, [message.date, timeAgoString]);
 
   return (
-    <div className="message">
+    <>
       <h2>
-        <AuthorComponent authorId={message.author} />
+        <AuthorComponent
+          authorNickname={authorNickname}
+          authorId={message.author}
+        />
         <sub>
           <time className="message-date" dateTime={date.toISOString()}>
             {timeAgoString}
@@ -107,7 +113,7 @@ const MessageComponent: FunctionComponent<MessageComponentProps> = ({
         </sub>
       </h2>
       <div className="message-content">{message.content}</div>
-    </div>
+    </>
   );
 };
 
