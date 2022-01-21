@@ -4,12 +4,16 @@ import useWebSocket, {
   ReadyState as WebSocketReadyState,
 } from "react-use-websocket";
 import MessageComponent from "src/components/Message";
-import {
-  isCurrentlyTypingMessage,
+import type {
+  AckMessage,
+  ConnectedUser,
+  DesiredNameMessage,
   TextMessage,
   TypingMessage,
 } from "src/lib/ServerMessage";
 import {
+  isConnectedUsersMessage,
+  isCurrentlyTypingMessage,
   isIdResponseMessage,
   isServerMessage,
   isTextMessage,
@@ -24,14 +28,20 @@ export default function Index(): JSX.Element {
   const [currentlyTyping, setCurrentlyTyping] = useState<string[]>([]);
   const [socketUrl, setSocketUrl] = useState("wss.tobot.tk:8085/");
   const [authorId, setAuthorId] = useState("");
+  const [connectedUsers, setConnectedUsers] = useState<ConnectedUser[]>([]);
+  const desiredNameInput = useRef<HTMLInputElement>(null);
   const messageInput = useRef<HTMLInputElement>(null);
   const messageContainer = useRef<HTMLOListElement>(null);
 
-  const getNickname = useCallback(
+  const getName = useCallback(
     (id: string) => {
-      return id === authorId ? "You" : id;
+      if (id === authorId) {
+        return "You";
+      } else {
+        return connectedUsers.find((user) => user.id === id)?.desiredName ?? id;
+      }
     },
-    [authorId]
+    [authorId, connectedUsers]
   );
   function onMessage(event: MessageEvent<string>): void {
     const message = JSON.parse(event.data);
@@ -45,9 +55,12 @@ export default function Index(): JSX.Element {
       setAuthorId(message.authorId);
     } else if (isTextMessage(message)) {
       setMessageHistory([...messageHistory, message]);
-      console.log("scrollheight", messageContainer.current?.scrollHeight);
     } else if (isCurrentlyTypingMessage(message)) {
       setCurrentlyTyping(message.currently);
+    } else if (isConnectedUsersMessage(message)) {
+      setConnectedUsers(message.connected);
+    } else {
+      console.warn("Server sent unhandled message", message);
     }
   }
 
@@ -59,9 +72,17 @@ export default function Index(): JSX.Element {
         websocket.sendJsonMessage({
           type: MessageType.ACK,
           date: Date.now(),
-        });
+        } as AckMessage);
       }, 1000);
       keepAliveIntervals.push(keepAliveInterval);
+
+      if (desiredNameInput.current?.value.length) {
+        websocket.sendJsonMessage({
+          type: MessageType.DESIRED_NAME,
+          date: Date.now(),
+          desiredName: desiredNameInput.current.value,
+        } as DesiredNameMessage);
+      }
     },
     onClose() {
       clearInterval(keepAliveInterval);
@@ -71,7 +92,7 @@ export default function Index(): JSX.Element {
     },
   });
 
-  const handleClickSendMessage = useCallback(() => {
+  const trySendMessage = useCallback(() => {
     if (!messageInput.current) {
       return;
     }
@@ -93,7 +114,7 @@ export default function Index(): JSX.Element {
   const trySetSocketUrl = useCallback(
     (url: string) => {
       try {
-        console.log(new URL("wss://" + url), url);
+        console.debug(new URL("wss://" + url), url);
         setSocketUrl(url);
       } catch (e) {
         console.debug("Invalid URL");
@@ -120,7 +141,6 @@ export default function Index(): JSX.Element {
       setTimeout(() => (shouldResendTyping = true), 1000);
     }
   }
-  console.log(handleInput);
 
   const typingIndicator = useMemo(() => {
     if (currentlyTyping.length === 0) {
@@ -136,10 +156,10 @@ export default function Index(): JSX.Element {
       }
       return (
         <>
-          {getNickname(currentlyTyping[0]) === currentlyTyping[0] ? (
+          {getName(currentlyTyping[0]) === currentlyTyping[0] ? (
             currentlyTyping[0]
           ) : (
-            <span className="nickname">{getNickname(currentlyTyping[0])}</span>
+            <span className="nickname">{getName(currentlyTyping[0])}</span>
           )}{" "}
           is typing...
         </>
@@ -148,10 +168,10 @@ export default function Index(): JSX.Element {
     if (currentlyTyping.length < 4) {
       const result = currentlyTyping.map((id, idx, arr) => (
         <>
-          {id === getNickname(id) ? (
+          {id === getName(id) ? (
             id
           ) : (
-            <span className="nickname">{getNickname(id)}</span>
+            <span className="nickname">{getName(id)}</span>
           )}
           {idx + 1 === arr.length ? "" : ", "}
         </>
@@ -161,7 +181,7 @@ export default function Index(): JSX.Element {
       return <>{result}</>;
     }
     return <>Several people are typing...</>;
-  }, [authorId, currentlyTyping, getNickname]);
+  }, [authorId, currentlyTyping, getName]);
 
   return (
     <main>
@@ -185,29 +205,62 @@ export default function Index(): JSX.Element {
           placeholder="wss://..."
           onChange={(e) => trySetSocketUrl(e.target.value)}
         />
+        <label htmlFor="desired-name-input">Name:</label>
+        <input
+          ref={desiredNameInput}
+          id="desired-name-input"
+          type="text"
+          placeholder="..."
+        />
       </header>
-      <ol ref={messageContainer} id="messages-container">
-        {messageHistory.map((message, idx) => (
-          <li className="message" key={idx}>
-            <MessageComponent
-              message={message}
-              authorNickname={getNickname(message.author)}
-            />
-          </li>
-        ))}
-      </ol>
-      <div id="message-writing-area">
-        <span id="typing-indicators">{typingIndicator}</span>
-        <span>
-          <input
-            type="text"
-            placeholder="Type here..."
-            id="message-input"
-            onInput={handleInput}
-            ref={messageInput}
-          />
-          <button onClick={handleClickSendMessage}>Send</button>
-        </span>
+      <div id="container">
+        <section id="message-area">
+          <ol ref={messageContainer} id="messages-container">
+            {messageHistory.map((message, idx) => (
+              <li className="message" key={idx}>
+                <MessageComponent
+                  message={message}
+                  authorNickname={getName(message.author)}
+                />
+              </li>
+            ))}
+          </ol>
+          <div id="message-writing-area">
+            <span id="typing-indicators">{typingIndicator}</span>
+            <span>
+              <input
+                type="text"
+                placeholder="Type here..."
+                id="message-input"
+                onInput={handleInput}
+                onKeyPress={(keyEvent) => {
+                  if (keyEvent.key === "Enter") {
+                    trySendMessage();
+                  }
+                }}
+                ref={messageInput}
+              />
+              <button onClick={trySendMessage}>Send</button>
+            </span>
+          </div>
+        </section>
+        <section id="user-area">
+          <h2>Users</h2>
+          <ol>
+            {connectedUsers.map(({ id }) => (
+              <li
+                className={
+                  "user" +
+                  (currentlyTyping.includes(id) ? " typing" : "") +
+                  (getName(id) !== id ? " nickname" : "")
+                }
+                key={id}
+              >
+                {getName(id)}
+              </li>
+            ))}
+          </ol>
+        </section>
       </div>
     </main>
   );
