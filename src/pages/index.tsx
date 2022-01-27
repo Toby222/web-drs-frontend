@@ -1,9 +1,10 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import useWebSocket, {
-  ReadyState,
   ReadyState as WebSocketReadyState,
 } from "react-use-websocket";
+import Connect, { ConnectionOptions } from "src/components/Connect";
 import MessageComponent from "src/components/Message";
+import UserBar from "src/components/UserBar";
 import type {
   AckMessage,
   ConnectedUser,
@@ -26,23 +27,28 @@ let shouldResendTyping = true;
 export default function Index(): JSX.Element {
   const [messageHistory, setMessageHistory] = useState<TextMessage[]>([]);
   const [currentlyTyping, setCurrentlyTyping] = useState<string[]>([]);
-  const [socketUrl, setSocketUrl] = useState("wss.tobot.tk:8085/");
-  const [authorId, setAuthorId] = useState("");
+  const [authorId, setAuthorId] = useState("wss.tobot.tk:8085/");
   const [connectedUsers, setConnectedUsers] = useState<ConnectedUser[]>([]);
-  const desiredNameInput = useRef<HTMLInputElement>(null);
+  const [desiredName, setDesiredName] = useState<string | undefined>(undefined);
+  const [socketUrl, setSocketUrl] = useState("");
+
   const messageInput = useRef<HTMLInputElement>(null);
   const messageContainer = useRef<HTMLOListElement>(null);
 
   const getName = useCallback(
     (id: string) => {
       if (id === authorId) {
-        return "You";
+        return (
+          (connectedUsers.find((user) => user.id === id)?.desiredName ?? id) +
+          " (you)"
+        );
       } else {
         return connectedUsers.find((user) => user.id === id)?.desiredName ?? id;
       }
     },
     [authorId, connectedUsers]
   );
+
   function onMessage(event: MessageEvent<string>): void {
     const message = JSON.parse(event.data);
 
@@ -53,6 +59,14 @@ export default function Index(): JSX.Element {
 
     if (isIdResponseMessage(message)) {
       setAuthorId(message.authorId);
+
+      if (desiredName) {
+        webSocket.sendJsonMessage({
+          type: MessageType.DESIRED_NAME,
+          date: Date.now(),
+          desiredName: desiredName,
+        } as DesiredNameMessage);
+      }
     } else if (isTextMessage(message)) {
       setMessageHistory([...messageHistory, message]);
     } else if (isCurrentlyTypingMessage(message)) {
@@ -65,24 +79,16 @@ export default function Index(): JSX.Element {
   }
 
   let keepAliveInterval: NodeJS.Timeout;
-  const websocket = useWebSocket("wss://" + socketUrl, {
+  const webSocket = useWebSocket("wss://" + socketUrl, {
     onMessage,
     onOpen() {
       keepAliveInterval = setInterval(() => {
-        websocket.sendJsonMessage({
+        webSocket.sendJsonMessage({
           type: MessageType.ACK,
           date: Date.now(),
         } as AckMessage);
       }, 1000);
       keepAliveIntervals.push(keepAliveInterval);
-
-      if (desiredNameInput.current?.value.length) {
-        websocket.sendJsonMessage({
-          type: MessageType.DESIRED_NAME,
-          date: Date.now(),
-          desiredName: desiredNameInput.current.value,
-        } as DesiredNameMessage);
-      }
     },
     onClose() {
       clearInterval(keepAliveInterval);
@@ -90,7 +96,24 @@ export default function Index(): JSX.Element {
         (interval) => interval !== keepAliveInterval
       );
     },
+    onError(e) {
+      console.error(2, e);
+    },
   });
+
+  const tryConnect = useCallback(
+    (opts: ConnectionOptions) => {
+      webSocket.getWebSocket()?.close();
+      console.debug(opts);
+      setConnectedUsers([]);
+      setMessageHistory([]);
+      setAuthorId("");
+
+      setDesiredName(opts.desiredName);
+      setSocketUrl(opts.url);
+    },
+    [webSocket]
+  );
 
   const trySendMessage = useCallback(() => {
     if (!messageInput.current) {
@@ -103,37 +126,20 @@ export default function Index(): JSX.Element {
 
     messageInput.current.value = "";
 
-    websocket.sendJsonMessage({
+    webSocket.sendJsonMessage({
       author: authorId,
       type: MessageType.TEXT,
       date: Date.now(),
       content: messageText,
     } as TextMessage);
-  }, [authorId, websocket]);
+  }, [authorId, webSocket]);
 
-  const trySetSocketUrl = useCallback(
-    (url: string) => {
-      try {
-        console.debug(new URL("wss://" + url), url);
-        setSocketUrl(url);
-      } catch (e) {
-        console.debug("Invalid URL");
-        // Invalid URL, don't do anything
-      } finally {
-        if (websocket.readyState === WebSocketReadyState.OPEN) {
-          websocket.getWebSocket()?.close();
-        }
-      }
-    },
-    [websocket]
-  );
-
-  function handleInput() {
+  function handleTyping() {
     if (
-      websocket.readyState === ReadyState.OPEN &&
+      webSocket.readyState === WebSocketReadyState.OPEN &&
       (shouldResendTyping || !currentlyTyping.includes(authorId))
     ) {
-      websocket.sendJsonMessage({
+      webSocket.sendJsonMessage({
         type: MessageType.TYPING,
         date: Date.now(),
       } as TypingMessage);
@@ -193,25 +199,11 @@ export default function Index(): JSX.Element {
             Your ID: <span style={{ fontWeight: "bold" }}>{authorId}</span>
           </>
         )}{" "}
+        <Connect tryConnect={tryConnect} />
         <span>Ready state: </span>
         <span style={{ fontWeight: "bold" }}>
-          {ReadyState[websocket.readyState]} ({websocket.readyState})
+          {WebSocketReadyState[webSocket.readyState]} ({webSocket.readyState})
         </span>
-        <label htmlFor="ws-url">WebSocket URL:</label>
-        <input
-          id="ws-url"
-          type="text"
-          value={socketUrl}
-          placeholder="wss://..."
-          onChange={(e) => trySetSocketUrl(e.target.value)}
-        />
-        <label htmlFor="desired-name-input">Name:</label>
-        <input
-          ref={desiredNameInput}
-          id="desired-name-input"
-          type="text"
-          placeholder="..."
-        />
       </header>
       <div id="container">
         <section id="message-area">
@@ -232,7 +224,7 @@ export default function Index(): JSX.Element {
                 type="text"
                 placeholder="Type here..."
                 id="message-input"
-                onInput={handleInput}
+                onInput={handleTyping}
                 onKeyPress={(keyEvent) => {
                   if (keyEvent.key === "Enter") {
                     trySendMessage();
@@ -244,23 +236,11 @@ export default function Index(): JSX.Element {
             </span>
           </div>
         </section>
-        <section id="user-area">
-          <h2>Users</h2>
-          <ol>
-            {connectedUsers.map(({ id }) => (
-              <li
-                className={
-                  "user" +
-                  (currentlyTyping.includes(id) ? " typing" : "") +
-                  (getName(id) !== id ? " nickname" : "")
-                }
-                key={id}
-              >
-                {getName(id)}
-              </li>
-            ))}
-          </ol>
-        </section>
+        <UserBar
+          connectedUsers={connectedUsers}
+          currentlyTyping={currentlyTyping}
+          getName={getName}
+        />
       </div>
     </main>
   );
