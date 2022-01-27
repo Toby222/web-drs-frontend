@@ -14,6 +14,7 @@ const AuthorComponent: FunctionComponent<AuthorComponentProps> = ({
       className={
         "message-author" + (authorId !== authorNickname ? " nickname" : "")
       }
+      title={authorId}
     >
       {authorNickname}
     </span>
