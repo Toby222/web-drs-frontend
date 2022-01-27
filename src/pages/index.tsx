@@ -27,10 +27,10 @@ let shouldResendTyping = true;
 export default function Index(): JSX.Element {
   const [messageHistory, setMessageHistory] = useState<TextMessage[]>([]);
   const [currentlyTyping, setCurrentlyTyping] = useState<string[]>([]);
-  const [authorId, setAuthorId] = useState("wss.tobot.tk:8085/");
+  const [authorId, setAuthorId] = useState("<...>");
   const [connectedUsers, setConnectedUsers] = useState<ConnectedUser[]>([]);
   const [desiredName, setDesiredName] = useState<string | undefined>(undefined);
-  const [socketUrl, setSocketUrl] = useState("");
+  const [socketUrl, setSocketUrl] = useState("wss.tobot.tk:8085");
 
   const messageInput = useRef<HTMLInputElement>(null);
   const messageContainer = useRef<HTMLOListElement>(null);
