@@ -1,7 +1,7 @@
 {
   "name": "Docker Container",
   "build": {
-    "dockerfile": "Dockerfile",
+    "dockerfile": "Dockerfile"
   },
   "postCreateCommand": "git submodule update --init && yarn install"
 }
