@@ -103,16 +103,25 @@ export default function Index(): JSX.Element {
 
   const tryConnect = useCallback(
     (opts: ConnectionOptions) => {
-      webSocket.getWebSocket()?.close();
-      console.debug(opts);
-      setConnectedUsers([]);
-      setMessageHistory([]);
-      setAuthorId("");
+      // Don't reconnect, just send new desiredName
+      if (opts.desiredName === desiredName) {
+        setDesiredName(opts.desiredName);
+        webSocket.sendJsonMessage({
+          type: MessageType.DESIRED_NAME,
+          date: Date.now(),
+          desiredName: opts.desiredName,
+        } as DesiredNameMessage);
+      } else {
+        webSocket.getWebSocket()?.close();
+        setConnectedUsers([]);
+        setMessageHistory([]);
+        setAuthorId("");
 
-      setDesiredName(opts.desiredName);
-      setSocketUrl(opts.url);
+        setDesiredName(opts.desiredName);
+        setSocketUrl(opts.url);
+      }
     },
-    [webSocket]
+    [desiredName, webSocket]
   );
 
   const trySendMessage = useCallback(() => {
