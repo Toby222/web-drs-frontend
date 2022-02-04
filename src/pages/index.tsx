@@ -213,17 +213,23 @@ export default function Index(): JSX.Element {
           <></>
         ) : (
           <>
-            Your ID: <span style={{ fontWeight: "bold" }}>{authorId}</span>
+            Your name:{" "}
+            <span title={authorId} style={{ fontWeight: "bold" }}>
+              {getName(authorId)}
+            </span>
           </>
-        )}{" "}
+        )}
+        <br />
         <Connect
           tryConnect={tryConnect}
           webSocketReadyState={webSocket.readyState}
         />
+        {/*
         <span>Ready state: </span>
         <span style={{ fontWeight: "bold" }}>
           {WebSocketReadyState[webSocket.readyState]} ({webSocket.readyState})
         </span>
+        */}
       </header>
       <div id="container">
         <section id="message-area">
