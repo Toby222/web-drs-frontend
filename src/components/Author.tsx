@@ -1,14 +1,14 @@
-import { FunctionComponent } from "react";
+import React from "react";
 
 type AuthorComponentProps = {
   authorId: string;
   authorNickname: string;
 };
 
-const AuthorComponent: FunctionComponent<AuthorComponentProps> = ({
+const AuthorComponent = React.memo(function Author({
   authorId,
   authorNickname,
-}) => {
+}: AuthorComponentProps) {
   return (
     <span
       className={
@@ -19,6 +19,6 @@ const AuthorComponent: FunctionComponent<AuthorComponentProps> = ({
       {authorNickname}
     </span>
   );
-};
+});
 
 export default AuthorComponent;

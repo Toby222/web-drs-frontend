@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { ReadyState as WebSocketReadyState } from "react-use-websocket";
 
 export type ConnectionOptions = {
@@ -11,7 +11,7 @@ export type ConnectComponentProps = {
   webSocketReadyState: WebSocketReadyState;
 };
 
-export default function Connect({
+const Connect = React.memo(function Connect({
   tryConnect,
   webSocketReadyState,
 }: ConnectComponentProps): JSX.Element {
@@ -56,4 +56,5 @@ export default function Connect({
       </button>
     </>
   );
-}
+});
+export default Connect;

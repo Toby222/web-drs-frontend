@@ -1,3 +1,4 @@
+import React from "react";
 import { ConnectedUser } from "src/lib/ServerMessage";
 
 export type UserBarProps = {
@@ -6,7 +7,7 @@ export type UserBarProps = {
   getName(id: string): string;
 };
 
-export default function UserBar({
+const UserBar = React.memo(function UserBar({
   connectedUsers,
   currentlyTyping,
   getName,
@@ -31,4 +32,6 @@ export default function UserBar({
       </ol>
     </section>
   );
-}
+});
+
+export default UserBar;
