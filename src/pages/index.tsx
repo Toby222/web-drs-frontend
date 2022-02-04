@@ -96,32 +96,40 @@ export default function Index(): JSX.Element {
         (interval) => interval !== keepAliveInterval
       );
     },
-    onError(e) {
-      console.error(2, e);
-    },
   });
 
   const tryConnect = useCallback(
     (opts: ConnectionOptions) => {
       // Don't reconnect, just send new desiredName
-      if (opts.desiredName === desiredName) {
-        setDesiredName(opts.desiredName);
-        webSocket.sendJsonMessage({
-          type: MessageType.DESIRED_NAME,
-          date: Date.now(),
-          desiredName: opts.desiredName,
-        } as DesiredNameMessage);
-      } else {
-        webSocket.getWebSocket()?.close();
-        setConnectedUsers([]);
-        setMessageHistory([]);
-        setAuthorId("");
+      switch (webSocket.readyState) {
+        case WebSocketReadyState.UNINSTANTIATED:
+          throw new Error("socket is not instantiated. This should not happen");
+        case WebSocketReadyState.CLOSED:
+          setConnectedUsers([]);
+          setMessageHistory([]);
+          setAuthorId("");
 
-        setDesiredName(opts.desiredName);
-        setSocketUrl(opts.url);
+          setDesiredName(opts.desiredName);
+          setSocketUrl(opts.url);
+          return;
+        case WebSocketReadyState.CLOSING:
+        case WebSocketReadyState.CONNECTING:
+          console.debug("WebSocket is already connecting or closing");
+          return;
+        case WebSocketReadyState.OPEN:
+          if (opts.desiredName === desiredName) {
+            return;
+          }
+          setDesiredName(opts.desiredName);
+          webSocket.sendJsonMessage({
+            type: MessageType.DESIRED_NAME,
+            date: Date.now(),
+            desiredName: opts.desiredName,
+          } as DesiredNameMessage);
+          return;
       }
     },
-    [desiredName, webSocket]
+    [webSocket, desiredName]
   );
 
   const trySendMessage = useCallback(() => {
@@ -208,7 +216,10 @@ export default function Index(): JSX.Element {
             Your ID: <span style={{ fontWeight: "bold" }}>{authorId}</span>
           </>
         )}{" "}
-        <Connect tryConnect={tryConnect} />
+        <Connect
+          tryConnect={tryConnect}
+          webSocketReadyState={webSocket.readyState}
+        />
         <span>Ready state: </span>
         <span style={{ fontWeight: "bold" }}>
           {WebSocketReadyState[webSocket.readyState]} ({webSocket.readyState})

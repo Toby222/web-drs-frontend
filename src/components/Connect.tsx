@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { ReadyState as WebSocketReadyState } from "react-use-websocket";
+
 export type ConnectionOptions = {
   desiredName?: string;
   url: string;
@@ -6,10 +8,12 @@ export type ConnectionOptions = {
 
 export type ConnectComponentProps = {
   tryConnect(opts: ConnectionOptions): void;
+  webSocketReadyState: WebSocketReadyState;
 };
 
 export default function Connect({
   tryConnect,
+  webSocketReadyState,
 }: ConnectComponentProps): JSX.Element {
   const [socketUrl, setSocketUrl] = useState("wss.tobot.tk:8085/");
   const [desiredName, setDesiredName] = useState<string | undefined>(undefined);
@@ -32,14 +36,23 @@ export default function Connect({
         onChange={(e) => setDesiredName(e.target.value)}
       />
       <button
-        onClick={() =>
+        onClick={() => {
+          console.debug("CLICK");
           tryConnect({
             url: socketUrl,
             desiredName: desiredName === "" ? undefined : desiredName,
-          })
-        }
+          });
+        }}
       >
-        Connect
+        {webSocketReadyState === WebSocketReadyState.CONNECTING
+          ? "Connecting..."
+          : webSocketReadyState === WebSocketReadyState.OPEN
+          ? "Change nickname"
+          : webSocketReadyState === WebSocketReadyState.CLOSING
+          ? "Disconnecting..."
+          : webSocketReadyState === WebSocketReadyState.CLOSED
+          ? "Connect"
+          : "UNEXPECTED STATE"}
       </button>
     </>
   );
