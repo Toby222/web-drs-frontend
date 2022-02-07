@@ -1,6 +1,22 @@
 {
-  "name": "vite-preact-ts-eslint-prettier",
-  "version": "0.0.0",
+  "name": "web-drs-frontent",
+  "version": "1.0.0",
+  "description": "Frontend for a non-persistent chat",
+  "homepage": "https://home.tobot.dev/toby/web-drs-frontend/",
+  "bugs": {
+    "url": "https://home.tobot.dev/toby/web-drs-frontend/issues",
+    "email": "tobi.berger13@gmail.com"
+  },
+  "license": "Unlicense",
+  "author": {
+    "name": "Tobias Berger",
+    "email": "tobi.berger13@gmail.com",
+    "url": "https://tobot.dev/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Toby222/web-drs-frontend.git"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -43,6 +59,6 @@
     "react": "^17.0.2",
     "react-dom": "^17.0.2"
   },
-  "pre-commit": "test",
-  "license": "MIT"
+  "private": true,
+  "pre-commit": "test"
 }
