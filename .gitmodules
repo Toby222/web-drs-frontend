@@ -1,3 +1,3 @@
 [submodule "src/lib"]
 	path = src/lib
-	url = https://github.com/Toby222/web-drs-lib.git
+	url = https://home.tobot.dev/toby/web-drs-lib.git
