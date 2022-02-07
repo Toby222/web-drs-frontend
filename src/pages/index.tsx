@@ -33,7 +33,6 @@ export default function Index(): JSX.Element {
   const [socketUrl, setSocketUrl] = useState("wss.tobot.tk:8085");
 
   const messageInput = useRef<HTMLInputElement>(null);
-  const messageContainer = useRef<HTMLOListElement>(null);
 
   const getName = useCallback(
     (id: string) => {
@@ -100,7 +99,6 @@ export default function Index(): JSX.Element {
 
   const tryConnect = useCallback(
     (opts: ConnectionOptions) => {
-      // Don't reconnect, just send new desiredName
       switch (webSocket.readyState) {
         case WebSocketReadyState.UNINSTANTIATED:
           throw new Error("socket is not instantiated. This should not happen");
@@ -151,7 +149,7 @@ export default function Index(): JSX.Element {
     } as TextMessage);
   }, [authorId, webSocket]);
 
-  function handleTyping() {
+  const handleTyping = useCallback(() => {
     if (
       webSocket.readyState === WebSocketReadyState.OPEN &&
       (shouldResendTyping || !currentlyTyping.includes(authorId))
@@ -163,7 +161,7 @@ export default function Index(): JSX.Element {
       shouldResendTyping = false;
       setTimeout(() => (shouldResendTyping = true), 1000);
     }
-  }
+  }, [authorId, currentlyTyping, webSocket]);
 
   const typingIndicator = useMemo(() => {
     if (currentlyTyping.length === 0) {
@@ -224,16 +222,10 @@ export default function Index(): JSX.Element {
           tryConnect={tryConnect}
           webSocketReadyState={webSocket.readyState}
         />
-        {/*
-        <span>Ready state: </span>
-        <span style={{ fontWeight: "bold" }}>
-          {WebSocketReadyState[webSocket.readyState]} ({webSocket.readyState})
-        </span>
-        */}
       </header>
       <div id="container">
         <section id="message-area">
-          <ol ref={messageContainer} id="messages-container">
+          <ol id="messages-container">
             {messageHistory.map((message, idx) => (
               <li className="message" key={idx}>
                 <MessageComponent
