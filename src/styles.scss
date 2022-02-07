@@ -33,7 +33,7 @@ main {
   display: flex;
   flex-direction: column;
 
-  height: calc(100vh - 40px);
+  height: calc(100vh - 60px);
   width: calc(100vw - 40px);
   justify-content: space-between;
   padding: 10px;
@@ -52,6 +52,8 @@ main {
       display: flex;
       flex-direction: column;
       flex-grow: 80;
+      max-width: 80vw;
+
       #messages-container {
         display: flex;
         flex-direction: column;
@@ -99,6 +101,7 @@ main {
       display: flex;
       flex-direction: column;
       flex-grow: 20;
+      max-width: 20vw;
 
       ol {
         overflow-y: scroll;
